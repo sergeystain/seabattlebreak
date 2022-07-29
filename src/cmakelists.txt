@@ -1,0 +1,13 @@
+file(GLOB HEADER_LIST CONFIGURE_DEPENDS "${seabattlebreak_SOURCE_DIR}/include/seabattlebreak/*.h")
+
+add_library(seabattlebreak_lib player.cc field.cc ${HEADER_LIST})
+
+target_include_directories(seabattlebreak_lib PUBLIC ../include)
+
+# IDEs should put the headers in a nice place
+source_group(
+	TREE "${PROJECT_SOURCE_DIR}/include"
+	PREFIX "Header Files"
+	FILES ${HEADER_LIST})
+
+

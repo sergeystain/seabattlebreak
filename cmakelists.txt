@@ -1,0 +1,37 @@
+cmake_minimum_required(VERSION 3.16)
+project(
+	seabattlebreak
+	VERSION 0.1
+	DESCRIPTION "A little and fast sea battle game"
+	LANGUAGES C CXX
+)
+
+# Only do these if this is the main project, 
+#  and not if it is included through add_subdirectory
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+	set(CMAKE_C_STANDARD 99)
+	set(CMAKE_CXX_STANDARD 17)
+	set(CMAKE_C_EXTENSIONS OFF)
+	set(CMAKE_C_STANDARD_REQUIRED ON)
+	set(CMAKE_CXX_EXTENSIONS OFF)
+	set(CMAKE_CXX_STANDARD_REQUIRED ON)
+	set(GLOBAL PROPERTY USE_FOLDERS ON)
+endif()
+
+include (FetchContent)
+
+add_subdirectory(src)
+
+add_subdirectory(apps)
+
+# Testing is enable by deffault only if this is the main app
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME OR MODERN_CMAKE_BUILD_TESTING)
+	option(PACKAGE_TESTS "Build the tests" ON)
+else()
+	option(PACKAGE_TESTS "Build the tests" OFF)
+endif()
+if(PACKAGE_TESTS)
+	enable_testing()
+	include(GoogleTest)
+	add_subdirectory(tests)
+endif()
