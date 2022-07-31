@@ -1,0 +1,4 @@
+
+add_executable(console_game console_game.cc)
+
+target_link_libraries(console_game PRIVATE seabattlebreak_lib)
