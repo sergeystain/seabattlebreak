@@ -1,3 +1,4 @@
+#include <random>
 
 #include <seabattlebreak/field.h>
 #include <seabattlebreak/player.h>
