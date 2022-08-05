@@ -8,53 +8,55 @@
 
 namespace seabattlebreak {
 
-struct Pos {
-  int x;
-  int y;
-};
-static bool operator==(const Pos& p1, const Pos& p2) {
-  return (p1.x == p2.x && p1.y == p2.y);
-}
-
-class Field {
- public:
-  enum class CellStates { kUnknown = 0, kEmpty, kShip, kWreck };
-  class SpiralIterator {
-   public:
-    SpiralIterator(const Pos center, const Pos border);
-    bool go_next();
-    Pos pos() const { return pos_; }
-
-   private:
-    bool move_forward(Pos& cur) const;
-    bool is_off_the_borders(Pos& p) const;
-    const Pos center_;
-    const Pos border_;
-    const int max_search_radius_;
-    Pos pos_;
+  struct Coord {
+    int x;
+    int y;
   };
-  Field(int x_size, int y_size, bool is_hostile)
-      : x_size_{x_size}, y_size_{y_size} {
-    field_.resize(rules::kXSize);
-    for (auto& column : field_) {
-      column.resize(rules::kYSize);
-      for (auto& cell : column) {
-        cell = is_hostile ? CellStates::kUnknown : CellStates::kEmpty;
-      }
-    }
+  inline bool operator==(const Coord& p1, const Coord& p2) {
+    return (p1.x == p2.x && p1.y == p2.y);
   }
-  bool is_purged() const { return (good_shipcells == 0); }
-  bool is_ready() const { return is_ready_; }
-  void place_ship(Pos pos, Pos direction);
-  bool shoot(Pos pos);
-  void mark(Pos pos, bool is_wrecked);
-  CellStates cell_state(int x, int y) const { return field_[x][y]; }
+  inline Coord rotate(Coord p, int n) {
+    for (int i{ 0 }; i < n; ++i) {
+      const int p_y = p.y;
+      p.y = -p.x;
+      p.x = p_y;
+    }
+    return p;
+  }
+
+  class Field {
+  public:
+    enum class CellStates { kUnknown = 0, kEmpty, kShip, kWreck };
+    class SpiralIterator {
+    public:
+      SpiralIterator(const Coord center, const Coord border);
+      bool go_next();
+      Coord pos() const { return pos_; }
+
+    private:
+      bool move_forward(Coord& cur) const;
+      bool is_off_the_borders(Coord p) const;
+      const Coord center_;
+      const Coord border_;
+      const int max_search_radius_;
+      Coord pos_;
+    };
+    Field(int x_size, int y_size, bool is_hostile);
+    bool is_purged() const { return (is_ready_ && good_shipcells == 0); }
+    bool is_ready() const { return is_ready_; }
+    void place_ship(Coord pos, Coord direction);
+    bool shoot(Coord pos);
+    void mark(Coord pos, bool is_wrecked);
+    CellStates cell_state(int x, int y) const { return field_[x][y]; }
+    CellStates cell_state(Coord p) const { return field_[p.x][p.y]; }
+    bool worth_shooting(Coord p);
 
  private:
-  bool try_place_ship(Pos pos, int length, Pos direction);
-  bool is_vacant(Pos center);
-  bool is_off_the_borders(Pos pos);
-  auto& cell(Pos pos) { return field_[pos.x][pos.y]; }
+  bool try_place_ship(Coord pos, int length, Coord direction);
+  bool is_vacant(Coord center);
+  bool is_off_the_borders(Coord pos);
+  auto& cell(Coord pos) { return field_[pos.x][pos.y]; }
+
   const int x_size_;
   const int y_size_;
   std::vector<std::vector<CellStates>> field_{};

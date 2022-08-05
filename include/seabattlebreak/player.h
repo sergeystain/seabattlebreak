@@ -16,14 +16,19 @@ class Player {
     delete foefield_;
   }
   void input(int x, int y);
-  bool is_winner() const;
   bool is_loser() const;
-  bool check_shot(int x, int y);
-
+  bool check_shot(Coord p);
+  void mark_shot(Coord p, bool is_hit);
+  void get_auto_shot(Coord& out_p) const;
+  bool get_shot(Coord& out_p);
+  void auto_set_ships();
   const Field& self_field() const { return *myfield_; }
   const Field& foe_field() const { return *foefield_; }
 
  private:
+  void request_shot(Coord p);
+  bool is_request_{false};
+  Coord request_shot_pos_{};
   Field* myfield_;
   Field* foefield_;
 };

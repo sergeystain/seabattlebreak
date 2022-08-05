@@ -11,13 +11,14 @@ class Random {  // Singleton class (private constructor/destructor)
   }
   void reseed(const char* const seed_cstr);
   int int0_9();
+  int int0_3();
  private:
   Random();
   Random(const Random&) = delete;
   Random& operator=(const Random&) = delete;
   ~Random() { delete gen_ptr_; }
-  typedef void HidenGenerator;
-  HidenGenerator* gen_ptr_{};
+  using HidenGeneratorPtr = void*;
+  HidenGeneratorPtr gen_ptr_{};
 };
 }  // namespace seabattlebreak
 

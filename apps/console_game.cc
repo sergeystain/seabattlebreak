@@ -4,8 +4,8 @@
 
 #include <iomanip>
 #include <iostream>
-#include <string_view>
 #include <string>
+#include <string_view>
 
 using seabattlebreak::Field;
 using seabattlebreak::rules::kXSize;
@@ -56,29 +56,16 @@ int main(int argc, char** argv) {
   seabattlebreak::Player user;
   seabattlebreak::Player comp;
 
-  //	comp.auto_set_ships();
+  comp.auto_set_ships();
 
   while (true) {
     print_fields(user);
-    static_assert(kYSize <= 10);
-    char x_inp{};
-    int y_inp{};
-    std::cin >> x_inp;
-    std::cin >> y_inp;
-    const int x{std::tolower(x_inp) - 'a'};
-    const int y{y_inp};
-    if (x > kXSize || y > kYSize || x < 0 || y < 0) { 
-      std::cout << "Outside the lines!\n";
-      continue;
-    }
 
-    user.input(x, y);
-
-    if (user.is_winner() && user.is_loser()) {
+    if (user.is_loser() && comp.is_loser()) {
       std::cout << "Standoff?!! Is it really?";
       break;
     }
-    if (user.is_winner()) {
+    if (comp.is_loser()) {
       std::cout << "You won. Congrats!!!";
       break;
     }
@@ -86,5 +73,31 @@ int main(int argc, char** argv) {
       std::cout << "You lost! Better luck next time.";
       break;
     }
+
+    char x_inp{};
+    int y_inp{};
+    std::cin >> x_inp;
+    std::cin >> y_inp;
+    const int x{std::tolower(x_inp) - 'a'};
+    const int y{y_inp};
+    if (x > kXSize || y > kYSize || x < 0 || y < 0) {
+      std::cout << "Outside the lines!\n";
+      std::cin.clear();
+      std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+      continue;
+    }
+
+    user.input(x, y);
+
+    seabattlebreak::Coord user_shot{}, comp_shot{};
+    if (user.get_shot(user_shot)) {
+      const bool user_made_hit{comp.check_shot(user_shot)};
+      user.mark_shot(user_shot, user_made_hit);
+
+      comp.get_auto_shot(comp_shot);
+      const bool comp_made_hit{user.check_shot(comp_shot)};
+      comp.mark_shot(comp_shot, comp_made_hit);
+    }
   }
+  return 0;
 }
