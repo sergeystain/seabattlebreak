@@ -20,8 +20,8 @@ static Coord operator*(const int& m, const Coord& p) {
   return Coord{p.x * m, p.y * m};
 }
 
-static int max(const int& a, const int& b) { return a > b ? a : b; }
-static int abs(const int& a) { return a > 0 ? a : -a; }
+static int max(int a, int b) { return a > b ? a : b; }
+static int abs(int a) { return a > 0 ? a : -a; }
 
 /// <summary>
 /// ////////
@@ -35,37 +35,35 @@ Field::SpiralIterator::SpiralIterator(const Coord center, const Coord border)
       max_search_radius_{max(max(center.x, border.x - center.x - 1),
                              max(center.y, border.y - center.y - 1))} {}
 bool Field::SpiralIterator::go_next() {
-  Coord next{pos_};
+  Coord cur{pos_};
   do {
-    if (!move_forward(next)) {
+    Coord relative{cur - center_};
+    if (relative.x == radius_ && relative.y > -radius_) {
+      --relative.y;
+    } else if (relative.y == -radius_ && relative.x > -radius_) {
+      --relative.x;
+    } else if (relative.x == -radius_ && relative.y < radius_) {
+      ++relative.y;
+    } else if (relative.y == radius_ && relative.x < radius_) {
+      ++relative.x;
+    }
+    if (relative.x == relative.y && relative.x >= 0) {
+      ++relative.x;
+      ++relative.y;
+      radius_++;
+    }
+    if (radius_ > max_search_radius_) {
       return false;
     }
-  } while (is_off_the_borders(next));
-  pos_ = next;
+    cur = relative + center_;
+  } while (is_off_the_borders(cur));
+  pos_ = cur;
   return true;
 }
-bool Field::SpiralIterator::move_forward(Coord& cur_pos) const {
-  Coord relative_pos = cur_pos - center_;
-  const int radius{max(abs(relative_pos.x), abs(relative_pos.y))};
-  if (relative_pos.x == radius && relative_pos.y > -radius) {
-    --relative_pos.y;
-  } else if (relative_pos.y == -radius && relative_pos.x > -radius) {
-    --relative_pos.x;
-  } else if (relative_pos.x == -radius && relative_pos.y < radius) {
-    ++relative_pos.y;
-  } else if (relative_pos.y == radius && relative_pos.x < radius) {
-    ++relative_pos.x;
-  }
-  if (relative_pos.x == relative_pos.y && relative_pos.x >= 0) {
-    ++relative_pos.x;
-    ++relative_pos.y;
-  }
-  if (radius > max_search_radius_) {
-    return false;
-  }
-  cur_pos = relative_pos + center_;
-  return true;
+bool Field::SpiralIterator::is_off_the_borders(Coord p) const {
+  return (p.x < 0 || p.x >= border_.x || p.y < 0 || p.y >= border_.y);
 }
+
 /// <summary>
 /// //////////////////////////////////////////////
 /// </summary>
@@ -78,22 +76,17 @@ Field::Field(int x_size, int y_size, bool is_hostile)
   for (auto& column : field_) {
     column.resize(rules::kYSize);
     for (auto& cell : column) {
-      cell = is_hostile ? CellStates::kUnknown : CellStates::kEmpty;
+      cell = is_hostile ? CellState::kUnknown : CellState::kEmpty;
     }
   }
 }
-
-bool Field::SpiralIterator::is_off_the_borders(Coord p) const {
-  return (p.x < 0 || p.x >= border_.x || p.y < 0 || p.y >= border_.y);
-}
-
 void Field::place_ship(Coord pos, Coord direction) {
   int i{0};
   while (ships_numbers_[i] == rules::kSizedShipCounts[i]) {
     ++i;
   }
   assert(i < std::size(ships_numbers_) && "Not trying to put more ships.");
-  const int length = i + 1;
+  const int length{i + 1};
   SpiralIterator itr{pos, Coord{rules::kXSize, rules::kYSize}};
   while (!try_place_ship(itr.pos(), length, direction)) {
     if (!itr.go_next()) {
@@ -102,34 +95,36 @@ void Field::place_ship(Coord pos, Coord direction) {
     }
   }
   ++(ships_numbers_[i]);
-  good_shipcells += length; 
+  good_shipcells += length;
 
-  if (i == std::size(ships_numbers_) - 1 && ships_numbers_[i] == rules::kSizedShipCounts[i]) {
+  if (i == std::size(ships_numbers_) - 1 &&
+      ships_numbers_[i] == rules::kSizedShipCounts[i]) {
     is_ready_ = true;
     for (auto& column : field_) {
       for (auto& cell : column) {
-        if(cell == CellStates::kEmpty) cell = CellStates::kUnknown;
+        if (cell == CellState::kEmpty) cell = CellState::kUnknown;
       }
     }
   }
 }
 
 bool Field::shoot(Coord pos) {
-  const bool is_hit{(cell(pos) == CellStates::kShip)};
-  cell(pos) = is_hit ? CellStates::kWreck : CellStates::kEmpty;
+  const bool is_hit{(cell(pos) == CellState::kShip)};
+  cell(pos) = is_hit ? CellState::kWreck : CellState::kEmpty;
   good_shipcells -= is_hit;
   return is_hit;
 }
 
 void Field::mark(Coord pos, bool is_hit) {
-  cell(pos) = is_hit ? CellStates::kWreck : CellStates::kEmpty;
+  cell(pos) = is_hit ? CellState::kWreck : CellState::kEmpty;
 }
 
 bool Field::worth_shooting(Coord p) {
   if (is_off_the_borders(p)) {
     return false;
   }
-  if (cell_state(p) == CellStates::kEmpty || cell_state(p) == CellStates::kWreck) {
+  if (cell_state(p) == CellState::kEmpty ||
+      cell_state(p) == CellState::kWreck) {
     return false;
   }
   const Coord diag_direction{1, 1};
@@ -138,8 +133,8 @@ bool Field::worth_shooting(Coord p) {
     if (is_off_the_borders(diag_sibling)) {
       continue;
     }
-    const auto sibling = cell_state(diag_sibling);
-    if (sibling == CellStates::kWreck) {
+    const auto sibling{cell_state(diag_sibling)};
+    if (sibling == CellState::kWreck) {
       return false;
     }
   }
@@ -155,7 +150,7 @@ bool Field::try_place_ship(Coord pos, int length, Coord direction) {
     }
   }
   for (int i{0}; i < length; ++i) {
-    cell(pos + i * direction) = CellStates::kShip;
+    cell(pos + i * direction) = CellState::kShip;
   }
   return true;
 }
@@ -165,10 +160,10 @@ bool Field::is_vacant(Coord pos) {
   }
   for (int x{-1}; x <= 1; ++x) {
     for (int y{-1}; y <= 1; ++y) {
-      const Coord nearby = pos + Coord{x,y};
+      const Coord nearby{pos + Coord{x, y}};
       if (is_off_the_borders(nearby)) {
         continue;
-      } else if (cell_state(nearby) != CellStates::kEmpty) {
+      } else if (cell_state(nearby) != CellState::kEmpty) {
         return false;
       }
     }

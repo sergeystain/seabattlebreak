@@ -29,8 +29,8 @@ class Player {
   void request_shot(Coord p);
   bool is_request_{false};
   Coord request_shot_pos_{};
-  Field* myfield_;
-  Field* foefield_;
+  Field* myfield_{};
+  Field* foefield_{};
 };
 
 }  // namespace seabattlebreak

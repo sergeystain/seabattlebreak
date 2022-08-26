@@ -11,15 +11,15 @@ using seabattlebreak::Field;
 using seabattlebreak::rules::kXSize;
 using seabattlebreak::rules::kYSize;
 
-static char state_to_char(Field::CellStates state) {
+static char state_to_char(Field::CellState state) {
   switch (state) {
-    case Field::CellStates::kUnknown:
+    case Field::CellState::kUnknown:
       return 0xfa;
-    case Field::CellStates::kEmpty:
+    case Field::CellState::kEmpty:
       return '*';
-    case Field::CellStates::kShip:
+    case Field::CellState::kShip:
       return 0xdb;
-    case Field::CellStates::kWreck:
+    case Field::CellState::kWreck:
       return 0xb0;
     default:
       assert(false && "Don't try to print unknown state");
@@ -32,8 +32,8 @@ static void print_fields(seabattlebreak::Player& p) {
   static_assert(kXSize < ('z' - 'a' + 1) && "Field width fits alphabet");
   constexpr std::string_view kHeaderStr{"abcdefghijklmnopqrstuvwxyz", kXSize};
   // Form fields rows strings
-  std::string self_rows[kYSize];
-  std::string foe_rows[kYSize];
+  std::string self_rows[kYSize]{};
+  std::string foe_rows[kYSize]{};
   for (int y{0}; y < kYSize; ++y) {
     for (int x{0}; x < kXSize; ++x) {
       self_rows[y] += state_to_char(p.self_field().cell_state(x, y));
@@ -53,8 +53,8 @@ static void print_fields(seabattlebreak::Player& p) {
 }
 
 int main(int argc, char** argv) {
-  seabattlebreak::Player user;
-  seabattlebreak::Player comp;
+  seabattlebreak::Player user{};
+  seabattlebreak::Player comp{};
 
   comp.auto_set_ships();
 
